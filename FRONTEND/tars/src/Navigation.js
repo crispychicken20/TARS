@@ -1,6 +1,8 @@
 // src/components/NavBar.js
 
 import React from "react";
+import { Link } from "react-router-dom";
+
 
 const Navigation = () => {
   return (
@@ -25,21 +27,20 @@ const Navigation = () => {
 
       {/* Right: About */}
       <div>
-        <button
+        <Link
+          to="/about"
           style={{
             background: "transparent",
             color: "white",
             border: "none",
             fontSize: "16px",
             cursor: "pointer",
-            marginRight: "100px", 
-          }}
-          onClick={() => {
-            window.scrollTo({ top: 1000, behavior: "smooth" });
+            marginRight: "100px",
+            textDecoration: "none",
           }}
         >
           About
-        </button>
+        </Link>
       </div>
     </div>
   );
