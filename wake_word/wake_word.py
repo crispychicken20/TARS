@@ -11,12 +11,10 @@ import pyaudio
 import pvporcupine
 from dotenv import load_dotenv
 
-# Load .env variables
 load_dotenv()
 ACCESS_KEY = os.getenv("ACCESS_KEY")
 
-# 🔥 Hardcoded model path (no config/settings.json needed)
-KEYWORD_PATH = "models/hey_tars_mac.ppn"
+KEYWORD_PATH = "models/HEY-TARS_en_mac_v3_0_0.ppn"
 
 class WakeWordDetector:
     def __init__(self, keyword_path: str, access_key: str):
@@ -32,17 +30,31 @@ class WakeWordDetector:
             access_key=self.access_key,
             keyword_paths=[self.keyword_path]
         )
-
         self.pa = pyaudio.PyAudio()
+        self._open_stream()
+        print("🟢 Wake word system ready. Say: 'Hey TARS'")
+
+    def _open_stream(self):
+        """(Re)open a new audio stream safely for macOS."""
+        if self.audio_stream:
+            try:
+                self.audio_stream.stop_stream()
+                self.audio_stream.close()
+            except Exception:
+                pass
+
+        # Automatically select the correct mic
+        input_device_index = 0  # ✅ MacBook Pro Microphone
+        channels = 1            # ✅ confirmed from list_devices.py
+
         self.audio_stream = self.pa.open(
             rate=self.porcupine.sample_rate,
-            channels=1,
+            channels=channels,
             format=pyaudio.paInt16,
             input=True,
-            input_device_index=3,  # 👈 Use MacBook Pro Microphone
-            frames_per_buffer=self.porcupine.frame_length
+            input_device_index=input_device_index,
+            frames_per_buffer=self.porcupine.frame_length,
         )
-        print("🟢 Wake word system ready. Say: 'Hey TARS'")
 
     def listen(self):
         try:
@@ -51,15 +63,26 @@ class WakeWordDetector:
                     self.porcupine.frame_length, exception_on_overflow=False
                 )
                 pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
-
                 result = self.porcupine.process(pcm)
                 if result >= 0:
                     print("✅ Wake word detected!")
-                    return True  # Triggers assistant
+                    return True
         except KeyboardInterrupt:
             print("🛑 Stopped by user.")
+        except Exception as e:
+            print("❌ Audio error:", e)
         finally:
-            self.cleanup()
+            # Fully close stream to avoid CoreAudio error
+            self.audio_stream.stop_stream()
+            self.audio_stream.close()
+            self.audio_stream = None
+            print("🧹 Closed audio stream (ready to reopen).")
+
+    def reset(self):
+        """Reopen a fresh audio stream (safe on macOS)."""
+        print("🔁 Resetting wake word system...")
+        self._open_stream()
+        print("🟢 Wake word listener restarted.")
 
     def cleanup(self):
         if self.audio_stream:
@@ -69,4 +92,4 @@ class WakeWordDetector:
             self.pa.terminate()
         if self.porcupine:
             self.porcupine.delete()
-        print("🧹 Cleaned up audio resources.")
+        print("🧹 Cleaned up all audio resources.")
