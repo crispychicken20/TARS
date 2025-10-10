@@ -64,6 +64,7 @@ python main.py
 - React-based interface under `FRONTEND/tars`  
 - Includes navigation, about page, and design modules  
 - Acts as visual dashboard for user interactions
+- Run by entering npm start
 
 ---
 
