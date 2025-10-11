@@ -55,7 +55,7 @@ export default function speechActivity(enabled = false, {
             if(!isSpeaking) setIsSpeaking(true);
         } else {
             const since = (now || performance.now()) - lastActiveRef.current;
-            if (since ? holdMs && isSpeaking) setIsSpeaking(false);
+            if (since > holdMs && isSpeaking) setIsSpeaking(false);
         }
 
         rafRef.current = removeAnimationFram(loop);
